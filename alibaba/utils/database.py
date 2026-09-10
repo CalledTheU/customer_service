@@ -21,7 +21,7 @@ from alibaba.config.config import settings
 # 引擎:用于和数据库做连接
 engine: AsyncEngine | None = None
 # session 会话:通过async_sessionmaker 工厂创建AsyncSession
-async_session: async_sessionmaker[AsyncSession]
+async_session: async_sessionmaker[AsyncSession] | None = None
 
 async def init_db_engine():
     global engine, async_session
