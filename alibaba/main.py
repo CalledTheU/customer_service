@@ -19,7 +19,8 @@ from alibaba.utils.database import init_db_engine
 # ==============================================================================
 
 if __name__ == '__main__':
-    asyncio.run(init_db_engine())
+    init_db_engine()
+    # asyncio.run(init_db_engine())
     uvicorn.run(app="alibaba.api.app:app",
                 host=settings.app_host,
                 port=settings.app_port)

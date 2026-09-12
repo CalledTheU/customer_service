@@ -36,18 +36,10 @@ class DialogueService:
         state:DialogueState = await self.repository.load_state(sender_id)
 
         # todo 2.根据查询历史记录 + 用户问题调用engine层处理用户消息
-        # result = self.engine.process_message(state, user_message)
+        result:ProcessResult = await self.engine.process_message(state, user_message)
 
         # 3.把当前这一次对话，调用repository层保存数据库里面
         await self.repository.save_state(state)
 
         # 4.返回engine层处理结果
-        # todo
-        return ProcessResult(
-            sender_id=sender_id,
-            message_id=user_message.message_id,
-            messages=[BotMessage(
-                text="你要揍嘛?",
-                object=None
-            )]
-        )
+        return result
