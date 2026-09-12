@@ -23,7 +23,7 @@ engine: AsyncEngine | None = None
 # session 会话:通过async_sessionmaker 工厂创建AsyncSession
 async_session: async_sessionmaker[AsyncSession] | None = None
 
-async def init_db_engine():
+def init_db_engine():
     global engine, async_session
     # 这个方法内部有数据库连接池
     if engine is None:
@@ -50,7 +50,7 @@ async def test():
     测试数据库连接
     :return:
     """
-    await init_db_engine()
+    init_db_engine()
     async with async_session() as session:
         result = await session.execute(text("select 1"))
         print(result.fetchone())
