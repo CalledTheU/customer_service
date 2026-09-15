@@ -1,9 +1,8 @@
-import asyncio
-
 import uvicorn
 
 from alibaba.config.config import settings
 from alibaba.utils.database import init_db_engine
+from alibaba.utils.http_client import init_http_client
 
 # -*- coding: utf-8 -*-
 # ==============================================================================
@@ -20,6 +19,7 @@ from alibaba.utils.database import init_db_engine
 
 if __name__ == '__main__':
     init_db_engine()
+    init_http_client()
     # asyncio.run(init_db_engine())
     uvicorn.run(app="alibaba.api.app:app",
                 host=settings.app_host,

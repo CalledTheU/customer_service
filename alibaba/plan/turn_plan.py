@@ -61,8 +61,12 @@ class TurnPlanner:
                                      if state.tasks else None)
 
         # flows_json yml文件中的流程数据(不包含steps数据,避免出现幻觉)
-        flows_json = json.dumps(asdict(flow_catalog)
-                                if flow_catalog else None)
+        flows = [
+            {key: value for key, value in asdict(flow).items()
+             if key != 'steps'}
+            for flow in flow_catalog.flows.values()
+        ] if flow_catalog else None
+        flows_json = json.dumps(flows, ensure_ascii=False)
 
         # 执行invoke，得到结果
         res = await chain.ainvoke({

@@ -21,12 +21,16 @@ from httpx import AsyncClient
 
 http_client: AsyncClient | None = None
 
+# 初始化方法
 # 创建httpx异步客户端
-async def get_http_client():
+def init_http_client():
     global http_client
     if http_client is None:
         http_client = httpx.AsyncClient(timeout=10.0)
     return http_client
+
+async def get_http_client():
+    return init_http_client()
 
 # 关闭httpx异步客户端
 async def close_http_client():
