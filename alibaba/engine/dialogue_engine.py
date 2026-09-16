@@ -22,6 +22,8 @@ from alibaba.plan.turn_plan_validation import TurnPlannValidator
 from alibaba.task.flow.loader import FlowLoader
 from alibaba.task.flow.models import FlowCatalog
 from alibaba.task.handler import TaskHandler
+from alibaba.clarify.clarify_response import ClarifyResponse
+from alibaba.chitchat.chit_chat import ChitChat
 
 """
     消息处理模块
@@ -32,10 +34,15 @@ class DialogueEngine:
 
     def __init__(self, turn_planner: TurnPlanner,
                  turn_plann_validator: TurnPlannValidator,
-                 task_handler: TaskHandler):
+                 task_handler: TaskHandler,
+                 clarif_response: ClarifyResponse,
+                 chit_chat: ChitChat):
         self.turn_planner = turn_planner
         self.turn_plann_validator = turn_plann_validator
         self.task_handler = task_handler
+        self.clarif_response = clarif_response
+        self.chit_chat = chit_chat
+
 
     async def process_message(self,
                               state: DialogueState,
@@ -129,7 +136,10 @@ class DialogueEngine:
             pass
         else:
             # 闲聊组件
-            pass
+            res = await self.chit_chat.handle(
+                user_message=user_message,
+                state=state)
+            return res
 
         # 4 不同轨道返回结果
 

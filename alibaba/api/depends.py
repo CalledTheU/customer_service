@@ -1,6 +1,8 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from alibaba.chitchat.chit_chat import ChitChat
+from alibaba.clarify.clarify_response import ClarifyResponse
 from alibaba.engine.dialogue_engine import DialogueEngine
 from alibaba.plan.turn_plan import TurnPlanner
 from alibaba.plan.turn_plan_validation import TurnPlannValidator
@@ -49,10 +51,14 @@ async def get_engine():
         flow_executor=FlowExecutor(response_render=response_render,
                                    action_runner=action_runner)
     )
+    chit_chat = ChitChat()
+    clarify_response = ClarifyResponse()
     return DialogueEngine(
         turn_planner=turn_planner,
         turn_plann_validator=turn_plann_validator,
-        task_handler=task_handler
+        task_handler=task_handler,
+        clarif_response=clarify_response,
+        chit_chat=chit_chat
     )
 
 async def get_dialogue_service(
