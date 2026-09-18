@@ -12,15 +12,19 @@
 # ==============================================================================
 import time
 import uuid
+from dataclasses import asdict
 from pathlib import Path
 
 from alibaba.domain.message import UserMessage, ProcessResult, MessageType, BotMessage
-from alibaba.domain.state import DialogueState, Turn
-from alibaba.plan.models import TurnPlan, TurnPlanValidationResult
+from alibaba.domain.state import DialogueState, Turn, FocusedObject
+from alibaba.knowledge.hanlder import KnowledgeHanlder
+from alibaba.plan.models import TurnPlan, TurnPlanValidationResult, ClarifyReason
 from alibaba.plan.turn_plan import TurnPlanner
 from alibaba.plan.turn_plan_validation import TurnPlannValidator
+from alibaba.task.command.models import SetSlotsCommand
 from alibaba.task.flow.loader import FlowLoader
-from alibaba.task.flow.models import FlowCatalog
+from alibaba.task.flow.models import FlowCatalog, Flow
+from alibaba.task.flow.steps import FlowStep, CollectSlotStep
 from alibaba.task.handler import TaskHandler
 from alibaba.clarify.clarify_response import ClarifyResponse
 from alibaba.chitchat.chit_chat import ChitChat
@@ -36,13 +40,14 @@ class DialogueEngine:
                  turn_plann_validator: TurnPlannValidator,
                  task_handler: TaskHandler,
                  clarif_response: ClarifyResponse,
-                 chit_chat: ChitChat):
+                 chit_chat: ChitChat,
+                 knowledge_hanlder: KnowledgeHanlder,):
         self.turn_planner = turn_planner
         self.turn_plann_validator = turn_plann_validator
         self.task_handler = task_handler
         self.clarif_response = clarif_response
         self.chit_chat = chit_chat
-
+        self.knowledge_hanlder = knowledge_hanlder
 
     async def process_message(self,
                               state: DialogueState,
@@ -57,7 +62,8 @@ class DialogueEngine:
                 user_message=user_message, state=state)
         else:
             ## 2.2 对象类型消息
-            messages: list[BotMessage] = await self._execute_object_message()
+            messages: list[BotMessage] = await self._execute_object_message(user_message=user_message,
+                                                                            state=state)
 
         # 3 提交state最新消息数据
         # 一轮对话：一问一答 或者 一问多答
@@ -133,7 +139,12 @@ class DialogueEngine:
             return result
         elif turnPlan.knowledge:
             # 知识检索组件
-            pass
+            res = await self.knowledge_hanlder.handle(
+                know_intents=turnPlan.knowledge.intents,
+                state=state,
+                user_message=user_message,
+            )
+            return res
         else:
             # 闲聊组件
             res = await self.chit_chat.handle(
@@ -146,5 +157,71 @@ class DialogueEngine:
         return []
 
     # 3 处理对象类型消息
-    async def _execute_object_message(self):
-        pass
+    async def _execute_object_message(self,state:DialogueState,
+                                      user_message:UserMessage) -> list[BotMessage]:
+        # 1 把对象类型消息放到focused_object
+        state.shared.focused_object = FocusedObject(
+            **asdict(user_message.object)
+        )
+
+        # todo 抽取方法
+        yaml_path = Path(__file__).parents[2] / 'flow_config' / 'user_flows.yml'
+        flow_catalog: FlowCatalog = FlowLoader().load(yaml_path)
+
+        # 2 判断是否可以填充槽位数据
+        if self._can_fill_slots(state, flow_catalog):
+            # 3 如果可以填充
+            if user_message.object.type == 'order':
+                slots = {'order_number': user_message.object.id}
+            if user_message.object.type == 'product':
+                slots = {'product_id': user_message.object.id}
+
+            ## 构建command:SetSlotsCommand
+            # {"command": "set_slots", "slots": {"<slot_name>": "<value>"}},
+            command = SetSlotsCommand(
+                command='set_slots',
+                slots=slots
+            )
+
+            ## 调用TaskHandler的方法执行流程
+            return await self.task_handler.handle(
+                commands=[command],
+                state=state,
+                user_message=user_message,
+                flows=flow_catalog
+            )
+        else:
+            # 4 如果无法填充
+            ## 执行澄清回复组件
+            return await self.clarif_response.responder(
+                state=state,
+                user_message=user_message,
+                reason=ClarifyReason.OBJECT_REQUIRES_INTENT
+            )
+
+    # 判断是否填充槽位数据
+    def _can_fill_slots(self, state: DialogueState, flow_catalog: FlowCatalog) -> bool:
+        # 是否活跃任务
+        active_task = state.tasks.active
+        if not active_task:
+            return False
+
+        # 2 有活跃任务
+        # 根据当前任务流程id，获取流程对象
+        flow_id = active_task.flow_id
+        flow: Flow = flow_catalog.get_flow_by_id(flow_id)
+
+        # 从流程对象获取所有步骤列表，当前任务步骤id到列表找到步骤对应数据
+        step: FlowStep = flow.get_step_by_id(active_task.step_id)
+
+        # # 判断当前步骤是否collect类型
+        if not isinstance(step, CollectSlotStep):
+            return False
+
+        if (step.slot_name == 'order_number') and (state.shared.focused_object.type == 'order'):
+            return True
+
+        if (step.slot_name == 'product_id') and (state.shared.focused_object.type == 'product'):
+            return True
+
+        return False

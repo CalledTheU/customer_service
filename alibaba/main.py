@@ -18,8 +18,8 @@ from alibaba.utils.http_client import init_http_client
 # ==============================================================================
 
 if __name__ == '__main__':
-    init_db_engine()
-    init_http_client()
+    # init_db_engine()
+    # init_http_client()
     # asyncio.run(init_db_engine())
     uvicorn.run(app="alibaba.api.app:app",
                 host=settings.app_host,

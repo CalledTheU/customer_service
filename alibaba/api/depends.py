@@ -4,6 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from alibaba.chitchat.chit_chat import ChitChat
 from alibaba.clarify.clarify_response import ClarifyResponse
 from alibaba.engine.dialogue_engine import DialogueEngine
+from alibaba.knowledge.hanlder import KnowledgeHanlder
+from alibaba.knowledge.provider import ProductProvider, ApiOrderProvider, FAQProvider, RAGProvider
+from alibaba.knowledge.registry import KnowledgeProviderRegistry
+from alibaba.knowledge.responder import KnowledgeResponseder
 from alibaba.plan.turn_plan import TurnPlanner
 from alibaba.plan.turn_plan_validation import TurnPlannValidator
 from alibaba.repository.dialogue_repository import DialogueRepository
@@ -53,12 +57,26 @@ async def get_engine():
     )
     chit_chat = ChitChat()
     clarify_response = ClarifyResponse()
+
+    knowledge_registry = KnowledgeProviderRegistry(
+        provider_objs=[
+            ProductProvider(),
+            ApiOrderProvider(),
+            FAQProvider(),
+            RAGProvider()
+        ]
+    )
+
+    knowledge_hanlder = KnowledgeHanlder(knowledge_responder=KnowledgeResponseder(),
+                                         knowledge_registry=knowledge_registry)
+
     return DialogueEngine(
         turn_planner=turn_planner,
         turn_plann_validator=turn_plann_validator,
         task_handler=task_handler,
         clarif_response=clarify_response,
-        chit_chat=chit_chat
+        chit_chat=chit_chat,
+        knowledge_hanlder=knowledge_hanlder
     )
 
 async def get_dialogue_service(

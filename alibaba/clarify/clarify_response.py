@@ -96,7 +96,7 @@ class ClarifyResponse:
                     and focused_object.type == "order"
             ):
                 return (
-                    "我已经收到这个订单了。你想查订单状态、"
+                    "我看到你发的这个订单了。你想查订单状态、"
                     "查物流，还是申请退款呢？"
                 )
             if (
@@ -104,7 +104,7 @@ class ClarifyResponse:
                     and focused_object.type == "product"
             ):
                 return (
-                    "我已经收到这个商品了。你想了解它的商品信息、"
+                    "我看到你发的这个商品了。你想了解它的商品信息、"
                     "发货情况，还是售后相关问题呢？"
                 )
 

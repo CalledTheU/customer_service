@@ -18,6 +18,7 @@ from langchain_core.prompts import PromptTemplate
 
 from alibaba.domain.message import UserMessage
 from alibaba.domain.state import DialogueState
+from alibaba.knowledge.intents import KNOWLEDGE_INTENTS
 from alibaba.plan.models import TurnPlan
 from alibaba.prompts.history_builder import HistoryBuilder
 from alibaba.prompts.loader import load_prompt
@@ -68,11 +69,22 @@ class TurnPlanner:
         ] if flow_catalog else None
         flows_json = json.dumps(flows, ensure_ascii=False)
 
+        # 知识检索范围数据
+        knowledge_intents_json = json.dumps(
+            [
+                {
+                    "id": intent.id,
+                    "description": intent.description
+                }
+                for intent in KNOWLEDGE_INTENTS.values()
+            ]
+        )
+
         # 执行invoke，得到结果
         res = await chain.ainvoke({
             "user_message": user_message_str,
             "flows_json": flows_json,
-            "knowledge_intents_json": {},# todo
+            "knowledge_intents_json": knowledge_intents_json,
             "task_state_json": task_state_json,
             "focused_object_json": focused_object_json,
             "conversation_history": conversation_history
