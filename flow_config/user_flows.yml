@@ -1,53 +1,68 @@
 slots:
-  order_number:
+  flow_number:
     type: text
-    label: 订单号
-    description: 用户的订单号
+    label: 流程单号
+    description: 协同平台中流程（审批单）的单号，例如 QJ20260901001
 
-  order_status:
+  flow_status:
     type: text
-    label: 订单状态
-    description: 订单当前状态
+    label: 流程状态
+    description: 流程当前的处理状态，例如审批中、已通过、已驳回
 
-  order_summary:
+  flow_summary:
     type: text
-    label: 订单摘要
-    description: 订单摘要信息
+    label: 流程摘要
+    description: 流程的处理摘要信息
 
-  tracking_number:
+  node_name:
     type: text
-    label: 物流单号
-    description: 物流单号
+    label: 当前节点
+    description: 流程当前所处的审批节点名称
 
-  logistics_company:
+  approver:
     type: text
-    label: 物流公司
-    description: 物流公司名称
+    label: 当前审批人
+    description: 流程当前节点的审批人姓名
 
-  logistics_status:
+  approval_progress:
     type: text
-    label: 物流进度
-    description: 物流当前进度
+    label: 审批进度
+    description: 流程的审批进度描述
 
-  product_id:
+  form_id:
     type: text
-    label: 商品ID
-    description: 当前咨询商品的唯一标识
+    label: 表单ID
+    description: 当前咨询表单的唯一标识
 
-  refund_reason:
+  leave_reason:
     type: text
-    label: 退款原因
-    description: 申请退款的原因
+    label: 请假事由
+    description: 申请请假的事由
 
-  recommendation_summary:
+  leave_days:
     type: text
-    label: 推荐结果
-    description: 相似商品推荐结果的展示文本
+    label: 请假天数
+    description: 本次申请请假的天数
+
+  seal_reason:
+    type: text
+    label: 用章事由
+    description: 申请用章的事由
+
+  form_code:
+    type: text
+    label: 表单编号
+    description: 表单的编号，用于用章申请时指定
+
+  seal_result:
+    type: text
+    label: 用章申请结果
+    description: 用章申请提交后的结果展示文本
 
 flows:
   onboarding:
     name: 欢迎引导
-    description: 在聊天窗口初次打开时欢迎用户，并介绍助手可处理的电商服务。这个 flow 通常由系统主动触发。
+    description: 在聊天窗口初次打开时欢迎用户，并介绍助手可处理的协同办公服务。这个 flow 通常由系统主动触发。
     steps:
       - id: start
         type: start
@@ -56,145 +71,145 @@ flows:
       - id: respond
         type: response
         template:
-          text: "你好，这里是 Atguigu 电商助手。我可以帮你查订单状态、查物流、了解商品信息，或者提交退款申请。"
+          text: "你好，这里是协同办公智能助手。我可以帮你查流程状态、查审批进度、发起请假申请或用章申请。"
         next: end
 
       - id: end
         type: end
         next: []
 
-  order_status_query:
-    name: 订单状态查询
-    description: 帮用户查询订单当前的处理状态，例如待付款、待发货、已发货或已完成。
+  flow_status_query:
+    name: 流程状态查询
+    description: 帮用户查询审批流程当前的处理状态，例如审批中、已通过或已驳回。
     steps:
       - id: start
         type: start
-        next: ask_order_number
+        next: ask_flow_number
 
-      - id: ask_order_number
+      - id: ask_flow_number
         type: collect
-        slot_name: order_number
+        slot_name: flow_number
         template:
-          text: "请告诉我你的订单号。"
-        next: lookup_order_status
+          text: "请告诉我流程单号。"
+        next: query_flow_status
 
-      - id: lookup_order_status
+      - id: query_flow_status
         type: action
-        action: action_lookup_order_status
-        next: show_order_status
+        action: action_query_flow_status
+        next: show_flow_status
 
-      - id: show_order_status
+      - id: show_flow_status
         type: response
         template:
-          text: "订单{{ slots.order_number }}
-          当前状态是：{{ slots.order_status }}。
-          {{ slots.order_summary }}"
+          text: "流程{{ slots.flow_number }}
+          当前状态是：{{ slots.flow_status }}。
+          {{ slots.flow_summary }}"
         next: end
 
       - id: end
         type: end
         next: []
 
-  logistics_tracking:
-    name: 物流查询
-    description: 帮用户查询订单物流进度、物流单号和配送公司信息。
+  approval_progress:
+    name: 审批进度查询
+    description: 帮用户查询流程的审批进度、当前审批节点和审批人信息。
     steps:
       - id: start
         type: start
-        next: ask_order_number
+        next: ask_flow_number
 
-      - id: ask_order_number
+      - id: ask_flow_number
         type: collect
-        slot_name: order_number
+        slot_name: flow_number
         template:
-          text: "请告诉我你的订单号。"
-        next: lookup_logistics
+          text: "请告诉我流程单号。"
+        next: query_approval_progress
 
-      - id: lookup_logistics
+      - id: query_approval_progress
         type: action
-        action: action_lookup_logistics
-        next: show_logistics
+        action: action_query_approval_progress
+        next: show_approval_progress
 
-      - id: show_logistics
+      - id: show_approval_progress
         type: response
         template:
-          text: "订单{{ slots.order_number }}
-          由{{ slots.logistics_company }}配送，
-          物流单号是{{ slots.tracking_number }}。
-          当前进度：{{ slots.logistics_status }}。"
+          text: "流程{{ slots.flow_number }}
+          当前审批节点是{{ slots.node_name }}，
+          审批人是{{ slots.approver }}。
+          当前进度：{{ slots.approval_progress }}。"
         next: end
 
       - id: end
         type: end
         next: []
 
-  refund_request:
-    name: 退款申请
-    description: 帮用户提交简单的退款申请，收集订单号和退款原因。
+  leave_request:
+    name: 请假申请
+    description: 帮用户发起简单的请假申请，收集请假事由和请假天数。
     steps:
       - id: start
         type: start
-        next: ask_order_number
+        next: ask_leave_reason
 
-      - id: ask_order_number
+      - id: ask_leave_reason
         type: collect
-        slot_name: order_number
+        slot_name: leave_reason
         template:
-          text: "请告诉我你的订单号。"
-        next: ask_refund_reason
+          text: "请简单说明一下请假事由。"
+        next: ask_leave_days
 
-      - id: ask_refund_reason
+      - id: ask_leave_days
         type: collect
-        slot_name: refund_reason
+        slot_name: leave_days
         template:
-          text: "请简单说一下退款原因。"
-        next: refund_submitted
+          text: "请告诉我请假天数。"
+        next: leave_submitted
 
-      - id: refund_submitted
+      - id: leave_submitted
         type: response
         template:
-          text: "好的，订单{{ slots.order_number }}的退款申请已提交，原因是：{{ slots.refund_reason }}。后续会尽快为你处理。"
+          text: "好的，你的请假申请已提交，事由是：{{ slots.leave_reason }}，请假{{ slots.leave_days }}天。后续会尽快为你处理。"
         next: end
 
       - id: end
         type: end
         next: []
 
-  similar_product_recommendation:
-    name: 相似商品推荐
-    description: 基于当前商品为用户推荐类似商品。当前版本先保留流程入口，具体推荐能力后续接入。
+  seal_request:
+    name: 用章申请
+    description: 基于当前表单发起用章申请。当前版本先保留流程入口，具体用章能力后续接入。
     steps:
       - id: start
         type: start
         next:
-          - if: "slots.get('product_id')"
+          - if: "slots.get('form_id')"
             then: respond
-          - else: missing_product_context
+          - else: missing_form_context
 
-      - id: missing_product_context
+      - id: missing_form_context
         type: response
         template:
-          text: "请先选择一个商品，再继续咨询。"
+          text: "请先选择一个表单，再继续发起用章申请。"
         next: end
 
       - id: respond
         type: action
-        action: action_recommend_similar_products
-        next: show_recommendation
+        action: action_submit_seal_request
+        next: show_seal_result
 
-      - id: show_recommendation
+      - id: show_seal_result
         type: response
         template:
-          text: "{{ slots.recommendation_summary }}"
+          text: "{{ slots.seal_result }}"
         next: end
 
       - id: end
         type: end
         next: []
 
-  human_handoff:
-    name: 人工客服
-    description: 将当前对话转交给人工客服处理。
+  admin_handoff:
+    name: 转人工支持
+    description: 将当前对话转交给行政或 IT 支持人员处理。
     steps:
       - id: start
         type: start
@@ -203,7 +218,7 @@ flows:
       - id: respond
         type: response
         template:
-          text: "好的，我来为你转接人工客服，请稍等。"
+          text: "好的，我来为你转接行政 / IT 支持人员，请稍等。"
         next: end
 
       - id: end

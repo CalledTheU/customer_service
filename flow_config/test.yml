@@ -1,60 +1,60 @@
 slots:
-  order_number:
+  leave_reason:
     type: text
-    label: 订单号
-    description: 用户要申请退款的订单号
+    label: 请假事由
+    description: 用户要申请请假的事由
 
-  refund_reason:
+  leave_days:
     type: text
-    label: 退款原因
-    description: 用户申请退款的原因
+    label: 请假天数
+    description: 用户申请请假的天数
 
 flows:
-  refund_request:
-    name: 退款申请
-    description: 收集订单号和退款原因，提交退款申请。
+  leave_request:
+    name: 请假申请
+    description: 收集请假事由和请假天数，提交请假申请。
     slots:
-      - order_number
-      - refund_reason
+      - leave_reason
+      - leave_days
     steps:
       - id: start
         type: start
         description: 流程入口
-        next: ask_order_number
+        next: ask_leave_reason
 
-      - id: ask_order_number
+      - id: ask_leave_reason
         type: collect
-        description: 收集订单号
-        slot_name: order_number
+        description: 收集请假事由
+        slot_name: leave_reason
         template:
           mode: static
-          text: "请告诉我你的订单号。"
+          text: "请说明一下请假事由。"
         validation:
-          condition: "slots.get('order_number')"
+          condition: "slots.get('leave_reason')"
           failure_template:
             mode: static
-            text: "订单号不能为空，请重新输入。"
-        next: ask_refund_reason
+            text: "请假事由不能为空，请重新输入。"
+        next: ask_leave_days
 
-      - id: ask_refund_reason
+      - id: ask_leave_days
         type: collect
-        description: 收集退款原因
-        slot_name: refund_reason
+        description: 收集请假天数
+        slot_name: leave_days
         template:
           mode: static
-          text: "请简单说一下退款原因。"
+          text: "请告诉我请假天数。"
         next:
-          - if: "slots.get('refund_reason')"
-            then: submit_refund
-          - else: ask_refund_reason
+          - if: "slots.get('leave_days')"
+            then: submit_leave
+          - else: ask_leave_days
 
-      - id: submit_refund
+      - id: submit_leave
         type: action
-        description: 提交退款申请并回复用户
+        description: 提交请假申请并回复用户
         action: action_response
         args:
           mode: static
-          text: "好的，订单{{ slots.order_number }}的退款申请已提交。"
+          text: "好的，你的请假申请已提交，事由是{{ slots.leave_reason }}，请假{{ slots.leave_days }}天。"
         next: end
 
       - id: end
