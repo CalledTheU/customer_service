@@ -43,3 +43,6 @@ class DialogueService:
 
         # 4.返回engine层处理结果
         return result
+
+    async def get_history_info(self, sender_id: str):
+        return await self.repository.load_state(sender_id)
